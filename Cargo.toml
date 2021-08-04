@@ -1,0 +1,25 @@
+[package]
+name = "caoe"
+version = "0.1.0"
+edition = "2018"
+authors = ["wayslog <zxs867179@gmail.com>"]
+description = "CaoE makes it easy to automatically kills all spawned children (and grandchildren) processes when the parent dies, even if killed by SIGKILL."
+license = "MIT"
+readme = "README.md"
+categories = ["os"]
+keywards = ["caoe", "douban", "children", "child_process", "processes", "operating_system"]
+
+[lib]
+name="caoe"
+path="src/lib.rs"
+
+[dependencies]
+lazy_static = "1.4.0"
+libc = "0.2.99"
+nix = "0.22.0"
+prctl = "1.0.0"
+
+[dev-dependencies]
+procspawn = "0.10.0"
+serde = { version = "1.0.127", features = ["derive"] }
+tempfile = "3.2.0"

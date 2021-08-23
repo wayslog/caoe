@@ -8,10 +8,10 @@ CaoE makes it easy to automatically kills all spawned children (and grandchildre
 ```rust
 use nix::sys::signal::Signal;
 
-// General usage, run the process as fork-and-fork model.
+// General usage, run the process in fork-and-fork model.
 caoe::fork(Signal::SIGTERM).unwrap();
 
-// Setup kill model in current process.
+// Setup kill tools in current process.
 caoe::simple(Signal::SIGTERM).unwrap();
 ```
 

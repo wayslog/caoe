@@ -20,18 +20,22 @@ lazy_static! {
     static ref GLOBAL_SIG: AtomicI32 = AtomicI32::new(Signal::SIGTERM as i32);
 }
 
-fn kill_global() {
+fn kill_global(check_err: bool) {
     let pid = Pid::from_raw(GLOBAL_GID.load(Ordering::SeqCst));
     let sig = unsafe { std::mem::transmute::<i32, Signal>(GLOBAL_SIG.load(Ordering::SeqCst)) };
     match killpg(pid, sig) {
-        Err(err) if err != Errno::ESRCH => panic!("{}", err),
+        Err(err) if err != Errno::ESRCH => {
+            if check_err {
+                panic!("{}", err)
+            }
+        }
         _ => {}
     }
 }
 
 extern "C" fn quit_signal_handler(_signum: c_int) {
     unsafe { signal(Signal::SIGTERM, SigHandler::SigDfl) }.unwrap();
-    kill_global();
+    kill_global(true);
 }
 
 extern "C" fn default_child_die_signal_handler(_signum: c_int) {
@@ -40,7 +44,7 @@ extern "C" fn default_child_die_signal_handler(_signum: c_int) {
         _ => 0,
     };
     unsafe { signal(Signal::SIGTERM, SigHandler::SigDfl) }.unwrap();
-    kill_global();
+    kill_global(false);
     unsafe { libc::exit((status_code & 0xff00) >> 8) };
 }
 
@@ -107,7 +111,8 @@ fn exit_when_parent_or_child_dies(given_sig: Signal) {
     }
 }
 
-pub fn simple(given_sig: Signal) -> std::io::Result<()> {
+#[allow(dead_code)]
+fn simple(given_sig: Signal) -> std::io::Result<()> {
     let handler = generate_handler();
     let gid = Pid::this();
     handler(gid, given_sig);
@@ -123,14 +128,20 @@ pub fn fork(given_sig: Signal) -> std::io::Result<()> {
                 pause();
             }
         }
-        ForkResult::Child => {}
+        ForkResult::Child => {
+            GLOBAL_GID.store(Pid::this().as_raw(), Ordering::SeqCst);
+            GLOBAL_SIG.store(Signal::SIGTERM as i32, Ordering::SeqCst);
+        }
     }
     nix::unistd::setpgid(Pid::from_raw(0), Pid::from_raw(0)).unwrap();
     match unsafe { unistd::fork().unwrap() } {
         ForkResult::Parent { .. } => {
             exit_when_parent_or_child_dies(given_sig);
         }
-        ForkResult::Child => {}
+        ForkResult::Child => {
+            GLOBAL_GID.store(Pid::this().as_raw(), Ordering::SeqCst);
+            GLOBAL_SIG.store(Signal::SIGTERM as i32, Ordering::SeqCst);
+        }
     }
 
     Ok(())

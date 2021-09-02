@@ -7,7 +7,7 @@ description = "CaoE makes it easy to automatically kills all spawned children (a
 license = "MIT"
 readme = "README.md"
 categories = ["os"]
-keywards = ["caoe", "douban", "children", "child_process", "processes", "operating_system"]
+keywords = ["caoe", "douban", "children", "child_process", "processes", "operating_system"]
 
 [lib]
 name="caoe"
@@ -20,6 +20,7 @@ nix = "0.22.0"
 prctl = "1.0.0"
 
 [dev-dependencies]
+glob = "0.3.0"
 procspawn = "0.10.0"
 serde = { version = "1.0.127", features = ["derive"] }
 tempfile = "3.2.0"

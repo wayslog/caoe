@@ -14,6 +14,27 @@ fn init_test_env() {
     });
 }
 
+fn is_process_alive(pid: &u32) -> bool {
+    match unsafe { libc::kill(*pid as libc::pid_t, 0 as libc::c_int) } {
+        0 => true,
+        -1 => {
+            use nix::errno::errno;
+            let errno_int = errno();
+            match errno_int {
+                0 => return true,
+                1 => return true,
+                3 => return false,
+                x => {
+                    panic!("fail to kill errno: {}", x);
+                }
+            }
+        }
+        x => {
+            panic!("fail to kill ret code: {}", x)
+        }
+    }
+}
+
 fn child(path: String) {
     let fname = format!("{}/child-{}", &path, Pid::this().as_raw());
     File::create(&fname).unwrap();
@@ -27,14 +48,11 @@ struct TestParams {
     fork: bool,
 }
 
-fn parent(path: String, pause: bool, fork: bool) {
+fn run_parent(path: String, pause: bool, fork: bool) {
+    let target_path = dbg!(path.clone());
     let params = TestParams { path, pause, fork };
 
-    if params.fork {
-        caoe::fork(caoe::Signal::SIGTERM).unwrap();
-    } else {
-        caoe::simple(caoe::Signal::SIGTERM).unwrap();
-    }
+    caoe::fork(caoe::Signal::SIGTERM).unwrap();
 
     let parent = procspawn::spawn(params, |params| {
         let fname = format!("{}/parent-{}", &params.path, Pid::this().as_raw());
@@ -51,11 +69,32 @@ fn parent(path: String, pause: bool, fork: bool) {
         } else {
             std::thread::sleep(Duration::from_millis(100));
         }
+        println!("baka");
     });
+    let ppid = parent.pid().unwrap();
     match parent.join_timeout(Duration::from_secs(10)) {
         Ok(_) => {}
         Err(_) => {}
     }
+    assert!(!is_process_alive(&ppid));
+    let sub_items = glob::glob(&format!("{}/*", target_path)).unwrap().count();
+    assert_eq!(sub_items, 4);
+
+    let pids = vec![];
+
+    for _ in 0..6 {
+        if pids.iter().any(is_process_alive) {
+            break;
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    }
+
+    assert_eq!(
+        glob::glob(&format!("{}/{}", target_path, "parent-*"))
+            .unwrap()
+            .count(),
+        1
+    );
 }
 
 #[test]
@@ -63,5 +102,5 @@ fn test_all_child_processes_should_be_killed_if_parent_quit_normally() {
     init_test_env();
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().to_str().unwrap().to_string();
-    parent(dir, false, false);
+    run_parent(dir, false, true);
 }

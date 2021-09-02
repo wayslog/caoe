@@ -11,8 +11,6 @@ use nix::sys::signal::Signal;
 // General usage, run the process in fork-and-fork model.
 caoe::fork(Signal::SIGTERM).unwrap();
 
-// Setup kill tools in current process.
-caoe::simple(Signal::SIGTERM).unwrap();
 ```
 
 ## How it works

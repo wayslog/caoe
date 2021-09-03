@@ -1,6 +1,6 @@
 [package]
 name = "caoe"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 authors = ["wayslog <zxs867179@gmail.com>"]
 description = "CaoE makes it easy to automatically kills all spawned children (and grandchildren) processes when the parent dies, even if killed by SIGKILL."

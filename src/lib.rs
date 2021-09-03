@@ -83,11 +83,13 @@ fn exit_when_parent_or_child_dies(given_sig: Signal) {
             SigHandler::Handler(default_child_die_signal_handler),
         )
         .unwrap();
-        signal(Signal::SIGHUP, SigHandler::Handler(quit_signal_handler)).unwrap();
     }
 
     #[cfg(target_os = "linux")]
     {
+        unsafe {
+            signal(Signal::SIGHUP, SigHandler::Handler(quit_signal_handler)).unwrap();
+        }
         prctl::set_death_signal(Signal::SIGHUP as isize).unwrap();
         loop {
             pause();

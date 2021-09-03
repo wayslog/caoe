@@ -7,7 +7,7 @@ description = "CaoE makes it easy to automatically kills all spawned children (a
 license = "MIT"
 readme = "README.md"
 categories = ["os"]
-keywords = ["caoe", "douban", "children", "child_process", "processes", "operating_system"]
+keywords = ["caoe",  "children", "child_process", "processes", "operating_system"]
 
 [lib]
 name="caoe"
